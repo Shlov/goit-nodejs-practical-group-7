@@ -35,40 +35,43 @@ function getFiles() {
   fs.readdir(path.join(__dirname, "./files"))
     .then((data) => {
       if (!data.length) {
-        console.log(chalk.red("Not files is this directiry "));
+        console.log(chalk.yellow('There are not files in this directory'));
       }
       return console.log(data);
     })
     .catch((err) => console.log(err));
 }
 
-function getFile(fileName) {
+async function getFile(fileName) {
   let objInfo = {};
-  fs.readdir(path.join(__dirname, "./files"))
+  const filesInfo = await fs.readdir(path.join(__dirname, "./files"));
+  if (!filesInfo.length) {
+    console.log(chalk.yellow('There are not files in this directory'));
+  }
+  if (!filesInfo.includes(fileName)) {
+    console.log(chalk.yellow(`File with name ${fileName} not found`));
+    return;
+  }
+
+  fs.readFile(path.join(__dirname, "./files", fileName), "utf-8")
     .then((data) => {
-      if (!data.includes(fileName)) {
-        console.log(chalk.red(`File with name ${fileName} not found`));
-        return;
-      }
-      fs.readFile(path.join(__dirname, "./files", fileName), "utf-8")
-        .then((data) => {
-          objInfo = {
-            fileName: path.basename(path.join(__dirname, "./files", fileName)),
-            extention: path.extname(path.join(__dirname, "./files", fileName)),
-            content: data,
-          };
-        })
-        .then(() => fs.stat(path.join(__dirname, "./files", fileName)))
-        .then((stats) =>
-          console.log({
-            ...objInfo,
-            size: stats.size,
-            date: stats.birthtime.toString(),
-          })
-        );
+      objInfo = {
+        fileName: path.basename(path.join(__dirname, "./files", fileName)),
+        extention: path.extname(path.join(__dirname, "./files", fileName)),
+        content: data,
+      };
     })
+    .then(() => fs.stat(path.join(__dirname, "./files", fileName)))
+    .then((stats) =>
+      console.log({
+        ...objInfo,
+        size: stats.size,
+        date: stats.birthtime.toString(),
+      })
+    )
     .catch((err) => console.log(err));
 }
+
 
 module.exports = {
   createFile,
