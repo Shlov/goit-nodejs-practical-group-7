@@ -54,7 +54,7 @@ function getFile(fileName) {
         .then((data) => {
           objInfo = {
             fileName: path.basename(path.join(__dirname, "./files", fileName)),
-            extention: path.extname(path.join(__dirname, "./files", fileName)),
+            extension: path.extname(path.join(__dirname, "./files", fileName)),
             content: data,
           };
         })

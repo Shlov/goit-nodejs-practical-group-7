@@ -1,10 +1,10 @@
 const fs = require("fs/promises");
 const path = require("path");
 const chalk = require("chalk");
-const checkExtention = require("./helpers/checkExtention");
+const checkExtension = require("./helpers/checkExtension");
 const dataValidation = require("./helpers/dataValidation");
 
-function createFile(fileName, content) {
+async function createFile(fileName, content) {
   const data = {
     fileName,
     content,
@@ -12,66 +12,62 @@ function createFile(fileName, content) {
   const { error } = dataValidation(data);
   if (error) {
     console.log(
-      chalk.red(`Please specify ${error.details[0].context.key} parameter`)
-    );
+      chalk.red(`Please specify ${error.details[0].context.key} parameter`));
     return;
   }
-  const { result, extention } = checkExtention(fileName);
+  const { result, extension: extension } = checkExtension(fileName);
   if (!result) {
     console.log(
       chalk.red(
-        `Sorry, this application doesn't support ${extention} extention!`
+        `Sorry, this application doesn't support ${extension} extension!`
       )
     );
     return;
   }
-  const filePath = path.join(__dirname, "./files", fileName);
-  fs.writeFile(filePath, content, "utf-8")
-    .then(() => console.log(chalk.blue(`File was sucessfully created`)))
-    .catch((error) => console.log(error));
+  try {
+    await fs.writeFile(path.join(__dirname, "./files", fileName), content, "utf-8");
+    console.log(chalk.blue(`File was successfully created`));
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-function getFiles() {
-  fs.readdir(path.join(__dirname, "./files"))
-    .then((data) => {
-      if (!data.length) {
-        console.log(chalk.yellow('There are not files in this directory'));
-      }
-      return console.log(data);
-    })
-    .catch((err) => console.log(err));
+async function getFiles() {
+  try {
+    const filesArr = await fs.readdir(path.join(__dirname, "./files"));
+    if (!filesArr.length) {
+      return console.log(chalk.yellow('There are not files in this directory'));
+    }
+    console.log(filesArr);
+  } catch (err) {
+    (err) => console.log(err)
+  }
 }
 
 async function getFile(fileName) {
-  let objInfo = {};
-  const filesInfo = await fs.readdir(path.join(__dirname, "./files"));
-  if (!filesInfo.length) {
-    console.log(chalk.yellow('There are not files in this directory'));
+  try {
+    const filesInfo = await fs.readdir(path.join(__dirname, "./files"));
+    if (!filesInfo.length) {
+      console.log(chalk.yellow('There are not files in this directory'));
+      return;
+    }
+    if (!filesInfo.includes(fileName)) {
+      console.log(chalk.yellow(`File with name ${fileName} not found`));
+      return;
+    }
+    const fileStat = await fs.stat(path.join(__dirname, "./files", fileName))
+    const objInfo = {
+      fileName: path.basename(path.join(__dirname, "./files", fileName)),
+      extension: path.extname(path.join(__dirname, "./files", fileName)),
+      content: await fs.readFile(path.join(__dirname, "./files", fileName), "utf-8"),
+      size: fileStat.size,
+      date: fileStat.birthtime.toString(),
+    }
+    console.dir(objInfo)
+  } catch (err) {
+    return console.log(err);
   }
-  if (!filesInfo.includes(fileName)) {
-    console.log(chalk.yellow(`File with name ${fileName} not found`));
-    return;
-  }
-
-  fs.readFile(path.join(__dirname, "./files", fileName), "utf-8")
-    .then((data) => {
-      objInfo = {
-        fileName: path.basename(path.join(__dirname, "./files", fileName)),
-        extention: path.extname(path.join(__dirname, "./files", fileName)),
-        content: data,
-      };
-    })
-    .then(() => fs.stat(path.join(__dirname, "./files", fileName)))
-    .then((stats) =>
-      console.log({
-        ...objInfo,
-        size: stats.size,
-        date: stats.birthtime.toString(),
-      })
-    )
-    .catch((err) => console.log(err));
 }
-
 
 module.exports = {
   createFile,
